@@ -21,10 +21,12 @@ l1_p = function(X, y, test_X, valid_X, tau, hidden_dim1, hidden_dim2, learning_r
   r = length(tau)
   p = hidden_dim2 + 1
   tau_mat = matrix(rep(tau, each = n), ncol = 1)
+  # if tau is c(0.1,0.2), n=3, then tau_mat is c(0.1,0.1,0.1,0.2,0.2,0.2)
 
-  input_x = tf$placeholder(tf$float32, shape(NULL, input_dim))
-  output_y = tf$placeholder(tf$float32, shape(NULL, 1))
-  output_y_tiled = tf$tile(output_y, shape(r, 1))
+  input_x = tf$placeholder(tf$float32, shape(NULL, input_dim))  #
+  output_y = tf$placeholder(tf$float32, shape(NULL, 1))         # (n, 1)
+  output_y_tiled = tf$tile(output_y, shape(r, 1))               # repeat r times along the first dimension (rows) and 1 time along the second dimension (columns).
+  # tf$tile: if a is [1,2], then tf$tile(a, (3,2)) is 3*4 matrix
   tau_tf = tf$placeholder(tf$float32, shape(n * r, 1))
 
   ### layer 1
@@ -40,17 +42,22 @@ l1_p = function(X, y, test_X, valid_X, tau, hidden_dim1, hidden_dim2, learning_r
   ### output layer
   delta_coef_mat = tf$Variable(tf$random_normal(shape(hidden_dim2, r)))
   delta_0_mat = tf$Variable(tf$random_normal(shape(1, r)))
+  # delta_coef_mat and delta_0_mat are the weights and biases for the output layer, with r being the number of quantiles
 
   delta_mat = tf$concat(list(delta_0_mat, delta_coef_mat), axis = 0L)
+  # delta_mat: (hidden_dim2+1,r)
   beta_mat = tf$transpose(tf$cumsum(tf$transpose(delta_mat)))
+  # beta_mat: (hidden_dim2+1,r). (cumsum: [1,2,3] cumsum to [1,3,6]. Same dim)
 
-  delta_vec = delta_mat[2:p, 2:r]
-  delta_0_vec = delta_mat[1, 2:r ,drop = FALSE]
-  delta_minus_vec = tf$maximum(0, -delta_vec)
-  delta_minus_vec_sum = tf$reduce_sum(delta_minus_vec, 0L)
+  delta_vec = delta_mat[2:p, 2:r]                            # Delta matrix without the first row and column, shape: (hidden_dim2, r-1)
+  delta_0_vec = delta_mat[1, 2:r ,drop = FALSE]              # First row of delta matrix without the first column, shape: (1, r-1)
+  delta_minus_vec = tf$maximum(0, -delta_vec)                # Non-positive part of delta matrix, shape: (hidden_dim2, r-1)
+  delta_minus_vec_sum = tf$reduce_sum(delta_minus_vec, 0L)   # Sum of non-positive deltas, shape: (r-1)
   delta_0_vec_clipped = tf$clip_by_value(delta_0_vec,
                                                      clip_value_min = tf$reshape(delta_minus_vec_sum, shape(nrow(delta_0_vec), ncol(delta_0_vec))),
-                                                     clip_value_max = matrix(Inf, nrow(delta_0_vec), ncol(delta_0_vec)))
+                                                     clip_value_max = matrix(Inf, nrow(delta_0_vec), ncol(delta_0_vec)))  # Clipped delta values, shape: (1, r-1)
+  # tf$clip_by_value is a function in TensorFlow that clips (or limits) the values of a tensor to be within a specified range. 
+  # It ensures that all elements in the tensor fall between the specified minimum and maximum values.
 
   #### optimization
   delta_constraint = delta_0_vec_clipped - delta_minus_vec_sum
@@ -69,13 +76,13 @@ l1_p = function(X, y, test_X, valid_X, tau, hidden_dim1, hidden_dim2, learning_r
                  tf$reduce_mean(delta_coef_mat^2)) +
     lambda_obj * tf$reduce_mean(tf$abs(delta_0_vec - delta_0_vec_clipped))
 
-  train_opt = tf$train$RMSPropOptimizer(learning_rate = learning_rate)$minimize(objective_fun)
+  train_opt = tf$train$RMSPropOptimizer(learning_rate = learning_rate)$minimize(objective_fun)  # RMSProp optimizer for minimizing the objective function.
 
-  sess = tf$Session()
-  sess$run(tf$global_variables_initializer())
+  sess = tf$Session()                          # Create a TensorFlow session
+  sess$run(tf$global_variables_initializer())  # Initialize all variables
 
   tmp_vec = numeric(max_deep_iter)
-  for(step in 1:max_deep_iter)
+  for(step in 1:max_deep_iter)                 # Training loop for max_deep_iter iterations
   {
     sess$run(train_opt,
              feed_dict = dict(input_x = X,
