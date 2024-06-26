@@ -64,8 +64,8 @@ l1_p = function(X, y, test_X, valid_X, tau, hidden_dim1, hidden_dim2, learning_r
   delta_clipped = tf$clip_by_value(delta_constraint, clip_value_min = 10e-20, clip_value_max = Inf)
 
   predicted_y_modified = tf$matmul(feature_vec, beta_mat[2:p, ]) +
-    tf$cumsum(tf$concat(list(beta_mat[1, 1, drop = FALSE], delta_0_vec_clipped), axis = 1L), axis = 1L)
-  predicted_y = tf$matmul(feature_vec, beta_mat[2:p, ]) + beta_mat[1, ]
+    tf$cumsum(tf$concat(list(beta_mat[1, 1, drop = FALSE], delta_0_vec_clipped), axis = 1L), axis = 1L) # not used in the training step
+  predicted_y = tf$matmul(feature_vec, beta_mat[2:p, ]) + beta_mat[1, ] # use the updated parameters to get predicted_y
   predicted_y_tiled = tf$reshape(tf$transpose(predicted_y), shape(n * r, 1))
 
   diff_y = output_y_tiled - predicted_y_tiled
