@@ -62,6 +62,7 @@ l1_p = function(X, y, test_X, valid_X, tau, hidden_dim1, hidden_dim2, learning_r
   #### optimization
   delta_constraint = delta_0_vec_clipped - delta_minus_vec_sum
   delta_clipped = tf$clip_by_value(delta_constraint, clip_value_min = 10e-20, clip_value_max = Inf)
+  # Those two are not used...???
 
   predicted_y_modified = tf$matmul(feature_vec, beta_mat[2:p, ]) +
     tf$cumsum(tf$concat(list(beta_mat[1, 1, drop = FALSE], delta_0_vec_clipped), axis = 1L), axis = 1L) # not used in the training step
