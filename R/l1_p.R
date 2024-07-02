@@ -25,7 +25,7 @@ l1_p = function(X, y, test_X, valid_X, tau, hidden_dim1, hidden_dim2, learning_r
 
   input_x = tf$placeholder(tf$float32, shape(NULL, input_dim))  #
   output_y = tf$placeholder(tf$float32, shape(NULL, 1))         # (n, 1)
-  output_y_tiled = tf$tile(output_y, shape(r, 1))               # repeat r times along the first dimension (rows) and 1 time along the second dimension (columns).
+  output_y_tiled = tf$tile(output_y, shape(r, 1))               # (n * r, 1) repeat r times along the first dimension (rows) and 1 time along the second dimension (columns).
   # tf$tile: if a is [1,2], then tf$tile(a, (3,2)) is 3*4 matrix
   tau_tf = tf$placeholder(tf$float32, shape(n * r, 1))
 
